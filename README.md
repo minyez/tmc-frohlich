@@ -16,9 +16,9 @@ TBA
 
 The main script `tmc-frohlich.py` has a couple of parameters to specify.
 
-Besides, you need the following files to run the calculation,
+Besides, you need the following files to run the calculations,
 
-- `POSCAR.0`: the structure file
+- `POSCAR`: the structure file
 - `POTCAR`: the PAW potential file
 
 ### Step 0 (optional): geometry optimization
@@ -40,6 +40,6 @@ Some modifications are made in this project for the purposes:
 
 ## TODOs
 
-- [ ] rewrite some `emc` functions to use numpy
+- [ ] rewrite some `emc` functions to use numpy (WIP)
 - [ ] optimize the execution: DFPT and VBM/CBM searching can be performed at the same time
 
