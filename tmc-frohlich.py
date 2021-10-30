@@ -150,7 +150,7 @@ def write_emc_incar(xc, encut, ispin, nbands, npar, prec):
     return '\n'.join(lines)
 
 def compute_emc(bandtag, nelect, ispin,
-                kpt, stencil, stepsize, latt,
+                kpt, stencil, stepsize, latt, Ns,
                 mpi, nprocs, vasp):
     """compute the effective mass at the band extreme at kpoint kpt
 
@@ -188,7 +188,7 @@ def compute_emc(bandtag, nelect, ispin,
             return v
         # search in the whole BZ
         print("Searching %s..." % bandtag.upper())
-        kpt = brute(f, ((0, 1), (0, 1), (0, 1)))
+        kpt = brute(f, ((0, 1), (0, 1), (0, 1)), Ns=Ns)
         search_note = "%s searched" % bandtag
     else:
         search_note = "%s specified" % bandtag
@@ -227,6 +227,8 @@ def _parser():
                     help="kpoint of VBM. Default to None for automatic search")
     gs.add_argument('--kc', type=float, default=None, nargs=3,
                     help="kpoint of CBM. Default to None for automatic search")
+    gs.add_argument('-N', type=int, dest="Ns", default=11,
+                    help="<11> Ns parameter of scipy.optimize.brute")
 
     ge = p.add_argument_group("EMC arguments")
     ge.add_argument('--stc', dest="stencil", default=3, choices=[3, 5], type=int,
@@ -322,7 +324,7 @@ def main():
             print(write_emc_incar(args.xc, args.encut, args.ispin,
                                   args.nbands, args.npar, args.prec), file=h)
         compute_emc('vbm', nelect, args.ispin,
-                    args.kv, args.stencil, args.stepsize, latt,
+                    args.kv, args.stencil, args.stepsize, latt, args.Ns,
                     args.mpi, args.nprocs, args.vasp)
         os.chdir('..')
     # CBM
@@ -340,7 +342,7 @@ def main():
             print(write_emc_incar(args.xc, args.encut, args.ispin,
                                   args.nbands, args.npar, args.prec), file=h)
         compute_emc('cbm', nelect, args.ispin,
-                    args.kc, args.stencil, args.stepsize, latt,
+                    args.kc, args.stencil, args.stepsize, latt, args.Ns,
                     args.mpi, args.nprocs, args.vasp)
         os.chdir('..')
 
