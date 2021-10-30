@@ -13,10 +13,14 @@ from shutil import copy2
 from re import match
 import numpy as np
 
-from emc import emc_setup
+from emc import emc_setup, emc_analyze, EV2H
 
 __version__ = '0.0.1'
 __author__ = "Min-Ye Zhang, Zhi-Hao Cui"
+
+# conversion coefficient of THz to Hartree
+THZ2HA = 1.519829846e-4
+HA2EV = 1.0 / EV2H
 
 def _which(exe):
     """check if executable exists"""
@@ -195,9 +199,44 @@ def compute_emc(bandtag, nelect, ispin,
     with open('%s.dat' % bandtag, 'w') as h:
         print("# %s" % search_note, file=h)
         print("%s %s %s" % tuple(kpt), file=h)
-    # TODO stdout redirection may affect print function after the setup. Need check
+
     emc_setup(stencil, kpt, stepsize, ib, latt)
     run_vasp(mpi, nprocs, vasp)
+
+def dfpt_analyze(outcar_fn="OUTCAR"):
+    """analyze the DFPT output
+
+    Namely, it retrieves the LO frequency and the static/ion-clamped dielectric constant.
+
+    For dielectric constant, the trace average of the dielectric tensor is returned, i.e.
+
+        eps = (eps_11 + eps_22 + eps_33) / 3
+    """
+    wLO = 0.0
+    eps_inf = 1.0
+    eps_s = 1.0
+    with open(outcar_fn, 'r') as h:
+        lines = h.readlines()
+    for i, l in enumerate(lines):
+        if l == " MACROSCOPIC STATIC DIELECTRIC TENSOR (including local field effects in DFT)\n":
+            eps_inf = sum(map(float, [lines[i+2+j].split()[j] for j in range(3)])) / 3.0
+        if l == " MACROSCOPIC STATIC DIELECTRIC TENSOR IONIC CONTRIBUTION\n":
+            eps_s = eps_inf + sum(map(float, [lines[i+2+j].split()[j] for j in range(3)])) / 3.0
+        if l == " Eigenvectors and eigenvalues of the dynamical matrix\n":
+            wLO = float(lines[i+4].split()[3])
+    return wLO, eps_inf, eps_s
+
+def coupling_constant(effmass, wLO, eps_inf, eps_s):
+    """compute the coupling constant in Frohlich model"""
+    cc = (1.0/eps_inf - 1.0/eps_s) * np.sqrt(2.0*effmass/wLO/THZ2HA) / 2.0
+    return cc
+
+def renorm_e_frohlich(effmass, wLO, eps_inf, eps_s):
+    """renormalization energy by frohlich model, in eV
+    """
+    cc = coupling_constant(effmass, wLO, eps_inf, eps_s)
+    renorm_e = wLO * THZ2HA * HA2EV * (cc + 0.0159*cc**2 + 0.000806*cc**3)
+    return renorm_e
 
 def _parser():
     p = ArgumentParser(description=__doc__, formatter_class=RawDescriptionHelpFormatter)
@@ -345,6 +384,41 @@ def main():
                     args.kc, args.stencil, args.stepsize, latt, args.Ns,
                     args.mpi, args.nprocs, args.vasp)
         os.chdir('..')
+
+    # after all these steps, start analysis
+    os.chdir('dfpt')
+    wLO, eps_inf, eps_s = dfpt_analyze()
+    print("DFPT results:")
+    print("-------------")
+    print("        w_LO (THz) = %f" % wLO)
+    print("  epsilon (elect.) = %f" % eps_inf)
+    print("  epsilon (static) = %f" % eps_s)
+    print("")
+
+    print("Effective mass and EPC correction:")
+    print("----------------------------------")
+
+    os.chdir('../emc-vbm')
+    mass= emc_analyze(args.stencil, args.stepsize, int(nelect/2), latt)
+    kv = np.loadtxt('vbm.dat')
+    print("  VBM: @(%12.6f, %12.6f, %12.6f)" % (kv[0], kv[1], kv[2]))
+    print("       eff. mass: (%10.4f, %10.4f, %10.4f)" % (mass[0], mass[1], mass[2]))
+    geoavg = np.power(np.absolute(np.product(mass)), 1.0/3.0)
+    print("       geo. aveg: %10.4f" % geoavg)
+    print("       coup. cst: %10.4f" % coupling_constant(geoavg, wLO, eps_inf, eps_s))
+    print("     renorm (eV): +%10.4f" % renorm_e_frohlich(geoavg, wLO, eps_inf, eps_s))
+
+    os.chdir('../emc-cbm')
+    mass = emc_analyze(args.stencil, args.stepsize, int(nelect/2)+1, latt)
+    kc = np.loadtxt('cbm.dat')
+    print("  CBM: @(%12.6f, %12.6f, %12.6f)" % (kc[0], kc[1], kc[2]))
+    print("       eff. mass: (%10.4f, %10.4f, %10.4f)" % (mass[0], mass[1], mass[2]))
+    geoavg = np.power(np.absolute(np.product(mass)), 1.0/3.0)
+    print("       geo. aveg: %10.4f" % geoavg)
+    print("       coup. cst: %10.4f" % coupling_constant(geoavg, wLO, eps_inf, eps_s))
+    print("     renorm (eV): -%10.4f" % renorm_e_frohlich(geoavg, wLO, eps_inf, eps_s))
+
+    os.chdir('..')
 
 if __name__ == "__main__":
     main()

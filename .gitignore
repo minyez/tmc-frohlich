@@ -136,3 +136,5 @@ POSCAR
 POTCAR
 KPOINTS
 
+# extra distribution
+*.tar.gz

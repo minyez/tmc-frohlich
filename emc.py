@@ -10,7 +10,7 @@ import sys
 import time
 
 from numpy import zeros
-from numpy.linalg import eig, norm
+from numpy.linalg import eigh, norm
 
 EMC_VERSION = '1.51py'
 #
@@ -48,12 +48,12 @@ def _stencil_fd_3():
         m[1][0] = m[0][1]
         m[2][0] = m[0][2]
         m[2][1] = m[1][2]
-        #
-        print('-> fd_effmass_st3: Effective mass tensor:\n')
-        for i in range(len(m)):
-            print('%15.8f %15.8f %15.8f' % (m[i][0], m[i][1], m[i][2]))
-        print('')
-        #
+        ##
+        #print('-> fd_effmass_st3: Effective mass tensor:\n')
+        #for i in range(len(m)):
+        #    print('%15.8f %15.8f %15.8f' % (m[i][0], m[i][1], m[i][2]))
+        #print('')
+        ##
         return m
     return st3, fd_effmass_st3
 #
@@ -108,12 +108,12 @@ def _stencil_fd_5():
         m[1][0] = m[0][1]
         m[2][0] = m[0][2]
         m[2][1] = m[1][2]
-        #
-        print('-> fd_effmass_st5: Effective mass tensor:\n')
-        for i in range(3):
-            print('%15.8f %15.8f %15.8f' % (m[i][0], m[i][1], m[i][2]))
-        print('')
-        #
+        ##
+        #print('-> fd_effmass_st5: Effective mass tensor:\n')
+        #for i in range(3):
+        #    print('%15.8f %15.8f %15.8f' % (m[i][0], m[i][1], m[i][2]))
+        #print('')
+        ##
         return m
     return st5, fd_effmass_st5
 
@@ -136,13 +136,13 @@ def T(m):
     p = [[ m[i][j] for i in range(len( m[j] )) ] for j in range(len( m )) ]
     return p
 
-#def N(v):
-#    """normalize"""
-#    max_ = 0.
-#    for item in v:
-#        if abs(item) > abs(max_): max_ = item
-#
-#    return [ item/max_ for item in v ]
+def N(v):
+    """normalize"""
+    max_ = 0.
+    for item in v:
+        if abs(item) > abs(max_): max_ = item
+
+    return [ item/max_ for item in v ]
 
 def DET_3X3(m):
     assert len(m) == 3, 'Matrix should be of the size 3 by 3'
@@ -275,7 +275,7 @@ def generate_kpoints(kpt_frac, st, h, basis):
     basis_r = [[ m[i][j]*2.0*pi for j in range(3) ] for i in range(3) ]
     #
     kpt_rec = MAT_m_VEC(T(basis_r), kpt_frac)
-    print('-> generate_kpoints: K-point in reciprocal coordinates: %5.3f %5.3f %5.3f' % (kpt_rec[0], kpt_rec[1], kpt_rec[2]))
+    #print('-> generate_kpoints: K-point in reciprocal coordinates: %5.3f %5.3f %5.3f' % (kpt_rec[0], kpt_rec[1], kpt_rec[2]))
     #
     #if prg == 'V' or prg == 'P':
     #    h = h*(1/BOHR2ANG) # [1/A]
@@ -333,7 +333,7 @@ def parse_EIGENVAL_VASP(eigenval_fh, band, diff2_size, debug=False):
     eigenval_fh.readline()
     #
     nelec, nkpt, nband = [int(s) for s in eigenval_fh.readline().split()]
-    if debug: print('From EIGENVAL: Number of the valence band is %d (NELECT/2)' % (nelec/2))
+    #if debug: print('From EIGENVAL: Number of the valence band is %d (NELECT/2)' % (nelec/2))
     if band > nband:
         raise ValueError('Requested band (%d) is larger than total number of the calculated bands (%d)!' % (band, nband))
 
@@ -346,7 +346,7 @@ def parse_EIGENVAL_VASP(eigenval_fh, band, diff2_size, debug=False):
             if band == j:
                 energies.append(float(line.split()[1])*EV2H)
 
-    if debug: print('')
+    #if debug: print('')
     return energies
 #
 #def parse_nscf_PWSCF(eigenval_fh, band, diff2_size, debug=False):
@@ -453,44 +453,47 @@ def get_eff_masses(m, basis):
     ## original
     #eigvec, eigval = jacobi(m)
     # using numpy function
-    eigval, eigvec = eig(m)
-    # TODO: verify consistency with the original code
+    eigval, eigvec = eigh(m)
+    # NOTE: the eigenvalues are computed the same as the original code
+    #       the eigenvectors may slightly differ when there are degenerate directions
+    # TEST: C diamond
     for i in range(3):
         vecs_cart[i, :] = eigvec[:, i]
         vecs_frac[i, :] = cart2frac(basis, eigvec[:, i])
-        #vecs_n[i, :]    = N(vecs_frac[i])
-        vecs_n[i, :]    = norm(vecs_frac[i, :])
+        vecs_n[i, :]    = N(vecs_frac[i])
+        #vecs_n[i, :]    = vecs_frac[i, :] / norm(vecs_frac[i, :])
     #
     em = 1.0 / eigval
     return em, vecs_cart, vecs_frac, vecs_n
 
-def print_emc_header(stencil):
+def emc_header(stencil):
     import datetime
-    print('Effective mass calculator '+EMC_VERSION)
-    print('Stencil: '+str(stencil))
-    print('License: MIT')
-    print('Developed by: Alexandr Fonari and Chris Sutton')
-    print('Started at: '+datetime.datetime.now().strftime("%Y-%m-%d %H:%M")+'\n')
+    lines = []
+    lines.append('Effective mass calculator '+EMC_VERSION)
+    lines.append('Stencil: '+str(stencil))
+    lines.append('License: MIT')
+    lines.append('Developed by: Alexandr Fonari and Chris Sutton')
+    lines.append('Started at: '+datetime.datetime.now().strftime("%Y-%m-%d %H:%M")+'\n')
+    return '\n'.join(lines)
 
 #
 def emc_setup(stencil, kpt, stepsize, band, basis):
     filename = 'emcpy.out_'+str(int(time.time()))
     print('Redirecting output to '+filename)
-    sys.stdout = open(filename, 'w')
-    print_emc_header(stencil)
+    with open(filename, 'w') as fh:
+        print(emc_header(stencil), file=fh)
+        # set up the stencil
+        st, fd_effmass = set_stencil_fd(stencil)
+        # set up KPOINTS file
+        kpoints = generate_kpoints(kpt, st, stepsize, basis)
+        with open('KPOINTS', 'w') as kpoints_fh:
+            kpoints_fh.write("EMC "+EMC_VERSION+"\n")
+            kpoints_fh.write("%d\n" % len(st))
+            kpoints_fh.write("Reciprocal\n")
+            for k in kpoints:
+                kpoints_fh.write( '%15.10f %15.10f %15.10f 0.01\n' % (k[0], k[1], k[2]) )
+        print('KPOINTS file has been generated in the current directory...', file=fh)
 
-    # set up the stencil
-    st, fd_effmass = set_stencil_fd(stencil)
-
-    # set up KPOINTS file
-    kpoints = generate_kpoints(kpt, st, stepsize, basis)
-    with open('KPOINTS', 'w') as kpoints_fh:
-        kpoints_fh.write("EMC "+EMC_VERSION+"\n")
-        kpoints_fh.write("%d\n" % len(st))
-        kpoints_fh.write("Reciprocal\n")
-        for k in kpoints:
-            kpoints_fh.write( '%15.10f %15.10f %15.10f 0.01\n' % (k[0], k[1], k[2]) )
-    print('KPOINTS file has been generated in the current directory...')
     # create emc.in file, such that the original emc.py can read and the results can be compared
     with open('emc.in', 'w') as h:
         h.write("%f %f %f\n" % (kpt[0], kpt[1], kpt[2]))
@@ -503,32 +506,35 @@ def emc_setup(stencil, kpt, stepsize, band, basis):
 def emc_analyze(stencil, stepsize, band, basis, output_fn='EIGENVAL'):
     filename = 'emcpy.out_'+str(int(time.time()))
     print('Redirecting output to '+filename)
-    print_emc_header(stencil)
-    sys.stdout = open(filename, 'w')
-    # set up the stencil
-    st, fd_effmass = set_stencil_fd(stencil)
-
-    output_fn = 'EIGENVAL'
-    with open(output_fn, 'r') as output_fh:
-        energies = []
-        energies = parse_EIGENVAL_VASP(output_fh, band, len(st))
-        m = fd_effmass(energies, stepsize)
-        #if prg.upper() == 'V' or prg.upper() == 'C':
-        #    energies = parse_EIGENVAL_VASP(output_fh, band, len(st))
-        #    m = fd_effmass(energies, stepsize)
-        ##
-        #if prg.upper() == 'Q':
-        #    energies = parse_nscf_PWSCF(output_fh, band, len(st))
-        #    m = fd_effmass(energies, stepsize)
-        ##
-        #if prg.upper() == 'P':
-        #    energies = parse_bands_CASTEP(output_fh, band, len(st))
-        #    m = fd_effmass(energies, stepsize)
-        ##
-        masses, vecs_cart, vecs_frac, vecs_n = get_eff_masses(m, basis)
-        print('Principle effective masses and directions:\n')
-        for i in range(3):
-            print('Effective mass (%d): %12.3f' % (i, masses[i]))
-            print('Original eigenvectors: %7.5f %7.5f %7.5f' % (vecs_cart[i][0], vecs_cart[i][1], vecs_cart[i][2]))
-            print('Normal fractional coordinates: %7.5f %7.5f %7.5f\n' % (vecs_n[i][0], vecs_n[i][1], vecs_n[i][2]))
+    with open(filename, 'w') as fh:
+        print(emc_header(stencil), file=fh)
+        # set up the stencil
+        st, fd_effmass = set_stencil_fd(stencil)
+        with open(output_fn, 'r') as output_fh:
+            energies = []
+            energies = parse_EIGENVAL_VASP(output_fh, band, len(st))
+            m = fd_effmass(energies, stepsize)
+            print('Effective mass tensor:\n', file=fh)
+            for i in range(3):
+                print('%15.8f %15.8f %15.8f' % (m[i][0], m[i][1], m[i][2]), file=fh)
+            print('', file=fh)
+            #if prg.upper() == 'V' or prg.upper() == 'C':
+            #    energies = parse_EIGENVAL_VASP(output_fh, band, len(st))
+            #    m = fd_effmass(energies, stepsize)
+            ##
+            #if prg.upper() == 'Q':
+            #    energies = parse_nscf_PWSCF(output_fh, band, len(st))
+            #    m = fd_effmass(energies, stepsize)
+            ##
+            #if prg.upper() == 'P':
+            #    energies = parse_bands_CASTEP(output_fh, band, len(st))
+            #    m = fd_effmass(energies, stepsize)
+            ##
+            masses, vecs_cart, vecs_frac, vecs_n = get_eff_masses(m, basis)
+            print('Principle effective masses and directions:\n', file=fh)
+            for i in range(3):
+                print('Effective mass (%d): %12.3f' % (i, masses[i]), file=fh)
+                print('Original eigenvectors: %7.5f %7.5f %7.5f' % (vecs_cart[i][0], vecs_cart[i][1], vecs_cart[i][2]), file=fh)
+                print('Normal fractional coordinates: %7.5f %7.5f %7.5f\n' % (vecs_n[i][0], vecs_n[i][1], vecs_n[i][2]), file=fh)
+    return masses
 
