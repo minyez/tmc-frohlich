@@ -1,4 +1,4 @@
-# workflow script for band energy renormalization based on Frohlich model
+# Workflow script for band energy renormalization based on Frohlich model
 
 ## Theory
 
@@ -10,18 +10,42 @@ TBA
 - NumPy (general-purpose math)
 - SciPy (optimization routines for band edge search)
 
-## Workflow
+## Usage
 
-The main script `tmc-frohlich.py` has a couple of parameters to specify.
+Put the main script `tmc-frohlich.py` and `emc.py` module to your working directory,
+e.g. `/path/to/workdir`.
 
-Besides, you need the following files to run the calculations,
+```shell
+cp tmc-frohlich.py emc.py /path/to/workdir
+cd /path/to/workdir
+```
+
+Then add the following files required by VASP to run the calculations
 
 - `POSCAR`: the structure file
 - `POTCAR`: the PAW potential file
+- `KPOINTS`: the kmesh that will be used for SCF/DFPT
 
-You can also provide `KPOINTS` for the kmesh of SCF/DFPT.
-Alternatively, an equally-spaced G-centered kmesh can be created by
-specifying the `-k` option of the main script.
+That's all. If you already have `mpirun` and `vasp_std` in `PATH`,
+you can start the calculation by issueing
+
+```shell
+python tmc-frohlich.py -n 4
+```
+
+where `-n` asks the computer to run 4 parallel tasks. This will run the full [workflow](Workflow).
+
+Note that the main script `tmc-frohlich.py` has a couple of parameters to specify.
+In particular, you can create an equally-spaced Gamma-centered kmesh by
+specifying the `-k` option, such that you don't have to write `KPOINTS` beforehand.
+
+For more details about the options, try
+
+```shell
+python tmc-frohlich.py -h
+```
+
+## Workflow
 
 ### Step 1: SCF with optional geometry optimization
 
