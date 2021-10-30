@@ -33,7 +33,7 @@ you can start the calculation by issueing
 python tmc-frohlich.py -n 4
 ```
 
-where `-n` asks the computer to run 4 parallel tasks. This will run the full [workflow](Workflow).
+where `-n` asks the computer to run 4 parallel tasks. This will run the full [workflow](#Workflow).
 
 Note that the main script `tmc-frohlich.py` has a couple of parameters to specify.
 In particular, you can create an equally-spaced Gamma-centered kmesh by
