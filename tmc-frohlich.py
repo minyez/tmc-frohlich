@@ -15,7 +15,7 @@ import numpy as np
 
 from emc import emc_setup, emc_analyze, EV2H
 
-__version__ = '0.0.1'
+__version__ = '0.1.0'
 __author__ = "Min-Ye Zhang, Zhi-Hao Cui"
 
 # conversion coefficient of THz to Hartree
