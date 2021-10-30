@@ -13,7 +13,6 @@ from numpy import zeros
 from numpy.linalg import eig, norm
 
 EMC_VERSION = '1.51py'
-STENCIL = 3 # or 5
 #
 ###################################################################################################
 #
@@ -24,7 +23,6 @@ def set_stencil_fd(stencil):
     if stencil == 5:
         return _stencil_fd_5()
     raise ValueError("stencil should be either 3 or 5")
-
 #
 #   three-point stencil
 def _stencil_fd_3():
@@ -58,7 +56,6 @@ def _stencil_fd_3():
         #
         return m
     return st3, fd_effmass_st3
-
 #
 #   five-point stencil
 def _stencil_fd_5():
@@ -476,11 +473,11 @@ def print_emc_header(stencil):
     print('Started at: '+datetime.datetime.now().strftime("%Y-%m-%d %H:%M")+'\n')
 
 #
-def emc_setup(stencil, kpt, stepsize, basis):
+def emc_setup(stencil, kpt, stepsize, band, basis):
     filename = 'emcpy.out_'+str(int(time.time()))
     print('Redirecting output to '+filename)
-    print_emc_header(stencil)
     sys.stdout = open(filename, 'w')
+    print_emc_header(stencil)
 
     # set up the stencil
     st, fd_effmass = set_stencil_fd(stencil)
@@ -494,6 +491,14 @@ def emc_setup(stencil, kpt, stepsize, basis):
         for k in kpoints:
             kpoints_fh.write( '%15.10f %15.10f %15.10f 0.01\n' % (k[0], k[1], k[2]) )
     print('KPOINTS file has been generated in the current directory...')
+    # create emc.in file, such that the original emc.py can read and the results can be compared
+    with open('emc.in', 'w') as h:
+        h.write("%f %f %f\n" % (kpt[0], kpt[1], kpt[2]))
+        h.write("%f\n" % stepsize)
+        h.write("%d\n" % band)
+        h.write("V\n")
+        for i in range(3):
+            h.write("%f %f %f\n" % (basis[i][0], basis[i][1], basis[i][2]))
 
 def emc_analyze(stencil, stepsize, band, basis, output_fn='EIGENVAL'):
     filename = 'emcpy.out_'+str(int(time.time()))

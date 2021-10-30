@@ -1,6 +1,4 @@
----
-title: workflow script for band energy renormalization based on Frohlich model
----
+# workflow script for band energy renormalization based on Frohlich model
 
 ## Theory
 
@@ -21,15 +19,26 @@ Besides, you need the following files to run the calculations,
 - `POSCAR`: the structure file
 - `POTCAR`: the PAW potential file
 
-### Step 0 (optional): geometry optimization
+You can also provide `KPOINTS` for the kmesh of SCF/DFPT.
+Alternatively, an equally-spaced G-centered kmesh can be created by
+specifying the `-k` option of the main script.
 
-### Step 1: phonon calculation with DFPT
+### Step 1: SCF with optional geometry optimization
 
-### Step 2: searching VBM and/or CBM
+This step is mainly to provide a converged CHGCAR for the later effective mass calculation.
 
-### Step 3: effective mass calculation
+This step also allows a geometry optimization, switched on by `--opt`.
 
-This step will essentially use [`emc.py`](https://github.com/afonari/emc)
+### Step 2: calculating dielectric tensor by DFPT with phonon contribution included
+
+### Step 3: compute effective mass
+
+This step will try to compute the electron effective mass at the band edge.
+The location of the band edges, i.e. valence band maximum (VBM) and conduction band minimum (CBM),
+are specified by `--kv` and `--kv` argument, respectively.
+If not, the script will search the whole BZ by optimization function implemented in SciPy.
+
+For effective mass calculation, it will essentially use [`emc.py`](https://github.com/afonari/emc)
 written by Alexandr Fonari and Chris Sutton.
 Some modifications are made in this project for the purposes:
 
@@ -42,4 +51,5 @@ Some modifications are made in this project for the purposes:
 
 - [ ] rewrite some `emc` functions to use numpy (WIP)
 - [ ] optimize the execution: DFPT and VBM/CBM searching can be performed at the same time
+- [ ] support for spin-polarizatino, i.e. ISPIN=2 (?)
 
