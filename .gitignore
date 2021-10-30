@@ -137,4 +137,4 @@ POTCAR
 KPOINTS
 
 # extra distribution
-*.tar.gz
+tmc-frohlich-v*
