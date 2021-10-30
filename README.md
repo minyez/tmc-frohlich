@@ -8,7 +8,7 @@ TBA
 
 - Python 2.7.18 or 3.7
 - NumPy (general-purpose math)
-- SciPy (optimization)
+- SciPy (optimization routines for band edge search)
 
 ## Workflow
 
@@ -52,4 +52,8 @@ Some modifications are made in this project for the purposes:
 - [ ] rewrite some `emc` functions to use numpy (WIP)
 - [ ] optimize the execution: DFPT and VBM/CBM searching can be performed at the same time
 - [ ] support for spin-polarizatino, i.e. ISPIN=2 (?)
+
+## Known issues
+
+- [ ] Carbon diamond seems to have no ionic contribution to epsilon. Is it correct or is there something wrong in the DFPT input?
 

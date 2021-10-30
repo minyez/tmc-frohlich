@@ -145,7 +145,7 @@ def write_dfpt_incar(xc, encut, ispin, nbands, npar, prec):
     return '\n'.join(lines)
 
 def write_emc_incar(xc, encut, ispin, nbands, npar, prec):
-    """write input file for emc as well as band extrema search"""
+    """write input file for emc as well as band edge search"""
     lines = _format_common_incar_lines(xc, encut, ispin, nbands, npar, prec)
     lines.append("# nonSCF")
     lines.append("ICHARG = 11")
@@ -156,9 +156,9 @@ def write_emc_incar(xc, encut, ispin, nbands, npar, prec):
 def compute_emc(bandtag, nelect, ispin,
                 kpt, stencil, stepsize, latt, Ns,
                 mpi, nprocs, vasp):
-    """compute the effective mass at the band extreme at kpoint kpt
+    """compute the effective mass at the band edge at kpoint kpt
 
-    if kpt is None, the band extreme will be searched before emc calculation.
+    if kpt is None, the band edge will be searched before emc calculation.
 
     Args:
         bandtag (str): 'vbm' or 'cbm'
@@ -261,7 +261,7 @@ def _parser():
     gv.add_argument('--npar', default=None, type=int)
     gv.add_argument('--ispin', default=1, choices=[1,], type=int)
 
-    gs = p.add_argument_group("Extrema searching arguments")
+    gs = p.add_argument_group("Band edge searching arguments")
     gs.add_argument('--kv', type=float, default=None, nargs=3,
                     help="kpoint of VBM. Default to None for automatic search")
     gs.add_argument('--kc', type=float, default=None, nargs=3,
@@ -347,7 +347,7 @@ def main():
         run_vasp(args.mpi, args.nprocs, args.vasp)
         os.chdir('..')
 
-    # Step 3: compute effective mass at band extrema
+    # Step 3: compute effective mass at band edge
     # VBM
     if os.path.isdir('emc-vbm'):
         print('skip VBM EMC: workdir emc-vbm found')
