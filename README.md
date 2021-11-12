@@ -51,9 +51,9 @@ python tmc-frohlich.py -h
 
 This step is mainly to provide a converged CHGCAR for the later effective mass calculation.
 
-This step also allows a geometry optimization, switched on by `--opt`.
+This step also allows a geometry optimization which can be switched on by `--opt`.
 
-### Step 2: calculating dielectric tensor by DFPT with phonon contribution included
+### Step 2: calculate dielectric tensor by DFPT with phonon contribution included
 
 ### Step 3: compute effective mass
 
@@ -67,17 +67,26 @@ written by Alexandr Fonari and Chris Sutton.
 Some modifications are made in this project for the purposes:
 
 - use as module
-- remove input file dependency, use parameters of main function instead.
-- Python 2/3 compatibility.
+- remove input file dependency and instead use parameters of the main function
+- Python 2/3 compatibility
 - pruned interfaces other than VASP
+
+## Examples
+
+NaCl (both VBM and CBM at Gamma point) with PBEsol functional and geometry optimization.
+Five-point stencil and step size of 0.05 inverse Bohr is used.
+
+```shell
+python tmc-frohlich.py -n 4 -k 8 8 8 --opt --xc pbesol --kv 0 0 0 --kc 0 0 0 --stc 5 -s 0.05
+```
 
 ## TODOs
 
 - [ ] rewrite some `emc` functions to use numpy (WIP)
 - [ ] optimize the execution: DFPT and VBM/CBM searching can be performed at the same time
-- [ ] support for spin-polarizatino, i.e. ISPIN=2 (?)
+- [ ] support for spin-polarization, i.e. ISPIN=2 (?)
 
 ## Known issues
 
-- [ ] Carbon diamond seems to have no ionic contribution to epsilon. Is it correct or is there something wrong in the DFPT input?
+- [x] Frohlich EPC renormalization applies only to polar materials. For elementary substances, the ionic contribution to dielectric tensor vanishes.
 
