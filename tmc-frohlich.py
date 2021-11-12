@@ -406,7 +406,7 @@ def main():
     geoavg = np.power(np.absolute(np.product(mass)), 1.0/3.0)
     print("       geo. aveg: %10.4f" % geoavg)
     print("       coup. cst: %10.4f" % coupling_constant(geoavg, wLO, eps_inf, eps_s))
-    print("     renorm (eV): +%10.4f" % renorm_e_frohlich(geoavg, wLO, eps_inf, eps_s))
+    print("     renorm (eV): +%9.4f" % renorm_e_frohlich(geoavg, wLO, eps_inf, eps_s))
 
     os.chdir('../emc-cbm')
     mass = emc_analyze(args.stencil, args.stepsize, int(nelect/2)+1, latt)
@@ -416,7 +416,7 @@ def main():
     geoavg = np.power(np.absolute(np.product(mass)), 1.0/3.0)
     print("       geo. aveg: %10.4f" % geoavg)
     print("       coup. cst: %10.4f" % coupling_constant(geoavg, wLO, eps_inf, eps_s))
-    print("     renorm (eV): -%10.4f" % renorm_e_frohlich(geoavg, wLO, eps_inf, eps_s))
+    print("     renorm (eV): -%9.4f" % renorm_e_frohlich(geoavg, wLO, eps_inf, eps_s))
 
     os.chdir('..')
 
